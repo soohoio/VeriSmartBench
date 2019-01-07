@@ -1,4 +1,5 @@
-pragma solidity ^0.4.2;
+pragma solidity ^0.4.11;
+
 contract owned {
     address public owner;
 
@@ -60,12 +61,13 @@ contract token {
     function approve(address _spender, uint256 _value)
         returns (bool success) {
         allowance[msg.sender][_spender] = _value;
+        tokenRecipient spender = tokenRecipient(_spender);
         return true;
     }
 
-    /* Approve and then communicate the approved contract in a single tx */
+    /* Approve and then comunicate the approved contract in a single tx */
     function approveAndCall(address _spender, uint256 _value, bytes _extraData)
-        returns (bool success) {    
+        returns (bool success) {
         tokenRecipient spender = tokenRecipient(_spender);
         if (approve(_spender, _value)) {
             spender.receiveApproval(msg.sender, _value, this, _extraData);
@@ -86,7 +88,7 @@ contract token {
     }
 
     /* This unnamed function is called whenever someone tries to send ether to it */
-    function () {
+    function () payable {
         throw;     // Prevents accidental sending of ether
     }
 }
@@ -95,6 +97,7 @@ contract MyAdvancedToken is owned, token {
 
     uint256 public sellPrice;
     uint256 public buyPrice;
+    uint256 public totalSupply;
 
     mapping (address => bool) public frozenAccount;
 
@@ -106,8 +109,12 @@ contract MyAdvancedToken is owned, token {
         uint256 initialSupply,
         string tokenName,
         uint8 decimalUnits,
-        string tokenSymbol
-    ) token (initialSupply, tokenName, decimalUnits, tokenSymbol) {}
+        string tokenSymbol,
+        address centralMinter
+    ) token (initialSupply, tokenName, decimalUnits, tokenSymbol) {
+        if(centralMinter != 0 ) owner = centralMinter;      // Sets the owner as specified (if centralMinter is not specified the owner is msg.sender)
+        balanceOf[owner] = initialSupply;                   // Give the owner all initial tokens
+    }
 
     /* Send coins */
     function transfer(address _to, uint256 _value) {
@@ -122,7 +129,7 @@ contract MyAdvancedToken is owned, token {
 
     /* A contract attempts to get the coins */
     function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
-        if (frozenAccount[_from]) throw;                        // Check if frozen            
+        if (frozenAccount[_from]) throw;                        // Check if frozen
         if (balanceOf[_from] < _value) throw;                 // Check if the sender has enough
         if (balanceOf[_to] + _value < balanceOf[_to]) throw;  // Check for overflows
         if (_value > allowance[_from][msg.sender]) throw;   // Check allowance
@@ -166,6 +173,32 @@ contract MyAdvancedToken is owned, token {
             throw;                                         // to do this last to avoid recursion attacks
         } else {
             Transfer(msg.sender, this, amount);            // executes an event reflecting on the change
-        }               
+        }
     }
+}
+
+contract cashBackMintable is token {
+  uint256 tokensForWei;
+
+  function cashBackMintable(
+    string tokenName,
+    uint8 decimalUnits,
+    string tokenSymbol,
+    uint256 _tokensForWei
+  )
+    token(0, tokenName, decimalUnits, tokenSymbol)
+  {
+    tokensForWei = _tokensForWei;
+  }
+
+  function () public payable {
+    msg.sender.transfer(msg.value);
+
+    uint amount = msg.value * tokensForWei;
+    if (amount > 0) {
+      balanceOf[msg.sender] += amount;
+      totalSupply += amount;
+      Transfer(0, msg.sender, amount);
+    }
+  }
 }

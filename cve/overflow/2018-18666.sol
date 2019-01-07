@@ -91,7 +91,7 @@ contract token {
     }
 }
 
-contract MyAdvancedToken is owned, token {
+contract SwftCoin is owned, token {
 
     uint256 public sellPrice;
     uint256 public buyPrice;
@@ -102,7 +102,7 @@ contract MyAdvancedToken is owned, token {
     event FrozenFunds(address target, bool frozen);
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
-    function MyAdvancedToken(
+    function SwftCoin(
         uint256 initialSupply,
         string tokenName,
         uint8 decimalUnits,

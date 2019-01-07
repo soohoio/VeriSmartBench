@@ -1,3 +1,4 @@
+//ERC20 Token
 pragma solidity ^0.4.2;
 contract owned {
     address public owner;
@@ -20,7 +21,7 @@ contract tokenRecipient { function receiveApproval(address _from, uint256 _value
 
 contract token {
     /* Public variables of the token */
-    string public standard = 'Token 0.1';
+    string public standard = "MoneyChainNet 1.0";
     string public name;
     string public symbol;
     uint8 public decimals;
@@ -65,7 +66,7 @@ contract token {
 
     /* Approve and then communicate the approved contract in a single tx */
     function approveAndCall(address _spender, uint256 _value, bytes _extraData)
-        returns (bool success) {    
+        returns (bool success) {
         tokenRecipient spender = tokenRecipient(_spender);
         if (approve(_spender, _value)) {
             spender.receiveApproval(msg.sender, _value, this, _extraData);
@@ -73,7 +74,7 @@ contract token {
         }
     }
 
-    /* A contract attempts to get the coins */
+    /* A contract attempts _ to get the coins */
     function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
         if (balanceOf[_from] < _value) throw;                 // Check if the sender has enough
         if (balanceOf[_to] + _value < balanceOf[_to]) throw;  // Check for overflows
@@ -91,25 +92,25 @@ contract token {
     }
 }
 
-contract MyAdvancedToken is owned, token {
+contract MoneyChainNetToken is owned, token {
 
     uint256 public sellPrice;
     uint256 public buyPrice;
 
-    mapping (address => bool) public frozenAccount;
+    mapping(address=>bool) public frozenAccount;
+
 
     /* This generates a public event on the blockchain that will notify clients */
     event FrozenFunds(address target, bool frozen);
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
-    function MyAdvancedToken(
-        uint256 initialSupply,
-        string tokenName,
-        uint8 decimalUnits,
-        string tokenSymbol
-    ) token (initialSupply, tokenName, decimalUnits, tokenSymbol) {}
-
-    /* Send coins */
+    uint256 public constant initialSupply = 35000000 * 10**8;//total supply 35 Million
+    uint8 public constant decimalUnits = 8;//decimals 8
+    string public tokenName = "MoneyChainNet";//name MoneyChainNet
+    string public tokenSymbol = "MCN";//symbol MCN
+    //is this fine?yes
+    function MoneyChainNetToken() token (initialSupply, tokenName, decimalUnits, tokenSymbol) {}
+     /* Send coins */
     function transfer(address _to, uint256 _value) {
         if (balanceOf[msg.sender] < _value) throw;           // Check if the sender has enough
         if (balanceOf[_to] + _value < balanceOf[_to]) throw; // Check for overflows
@@ -122,7 +123,7 @@ contract MyAdvancedToken is owned, token {
 
     /* A contract attempts to get the coins */
     function transferFrom(address _from, address _to, uint256 _value) returns (bool success) {
-        if (frozenAccount[_from]) throw;                        // Check if frozen            
+        if (frozenAccount[_from]) throw;                        // Check if frozen
         if (balanceOf[_from] < _value) throw;                 // Check if the sender has enough
         if (balanceOf[_to] + _value < balanceOf[_to]) throw;  // Check for overflows
         if (_value > allowance[_from][msg.sender]) throw;   // Check allowance
@@ -166,6 +167,6 @@ contract MyAdvancedToken is owned, token {
             throw;                                         // to do this last to avoid recursion attacks
         } else {
             Transfer(msg.sender, this, amount);            // executes an event reflecting on the change
-        }               
+        }
     }
 }

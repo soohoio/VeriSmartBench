@@ -1,4 +1,16 @@
 pragma solidity ^0.4.2;
+
+contract mortal {
+    /* Define variable owner of the type address*/
+    address owner;
+
+    /* this function is executed at initialization and sets the owner of the contract */
+    function mortal() { owner = msg.sender; }
+
+    /* Function to recover the funds on the contract */
+    function kill() { if (msg.sender == owner) selfdestruct(owner); }
+}
+
 contract owned {
     address public owner;
 
@@ -60,10 +72,11 @@ contract token {
     function approve(address _spender, uint256 _value)
         returns (bool success) {
         allowance[msg.sender][_spender] = _value;
+        tokenRecipient spender = tokenRecipient(_spender);
         return true;
     }
 
-    /* Approve and then communicate the approved contract in a single tx */
+    /* Approve and then comunicate the approved contract in a single tx */
     function approveAndCall(address _spender, uint256 _value, bytes _extraData)
         returns (bool success) {    
         tokenRecipient spender = tokenRecipient(_spender);
@@ -91,10 +104,11 @@ contract token {
     }
 }
 
-contract MyAdvancedToken is owned, token {
+contract WelfareTokenFund is owned, token, mortal {
 
     uint256 public sellPrice;
     uint256 public buyPrice;
+    uint256 public totalSupply;
 
     mapping (address => bool) public frozenAccount;
 
@@ -102,12 +116,10 @@ contract MyAdvancedToken is owned, token {
     event FrozenFunds(address target, bool frozen);
 
     /* Initializes contract with initial supply tokens to the creator of the contract */
-    function MyAdvancedToken(
-        uint256 initialSupply,
-        string tokenName,
-        uint8 decimalUnits,
-        string tokenSymbol
-    ) token (initialSupply, tokenName, decimalUnits, tokenSymbol) {}
+    function WelfareTokenFund() token (1000000000, "Welfare Token Fund", 3, "WTF") {
+        owner = 0x00e199840Fe2a772282A770F9eAb2Ab3e6B0cbDe;      // Sets the owner as specified (if centralMinter is not specified the owner is msg.sender)
+        balanceOf[owner] = 1000000000;                   // Give the owner all initial tokens
+    }
 
     /* Send coins */
     function transfer(address _to, uint256 _value) {
